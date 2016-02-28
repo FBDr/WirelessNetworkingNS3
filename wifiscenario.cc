@@ -15,14 +15,13 @@
  */
 
 #include "ns3/core-module.h"
-#include "ns3/point-to-point-module.h"
 #include "ns3/network-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
-
+#include "ns3/netanim-module.h"
 //  Network Topology
 //   Wifi 10.1.4.0
 //                 AP
@@ -102,16 +101,13 @@ main (int argc, char *argv[])
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
                                  "MinX", DoubleValue (0.0),
                                  "MinY", DoubleValue (0.0),
-                                 "DeltaX", DoubleValue (5.0),
-                                 "DeltaY", DoubleValue (10.0),
-                                 "GridWidth", UintegerValue (3),
+                                 "DeltaX", DoubleValue (1.5),
+                                 "DeltaY", DoubleValue (1.0),
+                                 "GridWidth", UintegerValue (4),
                                  "LayoutType", StringValue ("RowFirst"));
 
-  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                             "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
-  mobility.Install (wifiStaNodes);
-
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.Install (wifiStaNodes);
   mobility.Install (wifiApNode);
 
   InternetStackHelper stack;
@@ -149,8 +145,9 @@ main (int argc, char *argv[])
       phy.EnablePcap ("third", apDevices.Get (0));
 
     }
-
+  AnimationInterface anim ("animation.xml");
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
+
 }
