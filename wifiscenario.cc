@@ -70,8 +70,9 @@ main (int argc, char *argv[])
 
 
   NodeContainer wifiStaNodes;
-  wifiStaNodes.Create (nWifi);
-  NodeContainer wifiApNode = wifiStaNodes.Get (0);
+  wifiStaNodes.Create (nWifi-1);
+  NodeContainer wifiApNode;
+  wifiApNode.Create (1);
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
@@ -105,19 +106,25 @@ main (int argc, char *argv[])
                                  "DeltaY", DoubleValue (1.0),
                                  "GridWidth", UintegerValue (4),
                                  "LayoutType", StringValue ("RowFirst"));
-
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                             "Bounds", RectangleValue (Rectangle (-5, 5, -5, 5)));
   mobility.Install (wifiStaNodes);
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode);
 
   InternetStackHelper stack;
   stack.Install (wifiStaNodes);
-
+  stack.Install (wifiApNode);
   Ipv4AddressHelper address;
 
-  address.SetBase ("10.1.4.0", "255.255.255.0");
+ 
   Ipv4InterfaceContainer staInterfaces;
+ 
+  Ipv4InterfaceContainer apInterfaces;
+  address.SetBase ("10.1.4.0", "255.255.255.0");
+  apInterfaces = address.Assign (apDevices);
   staInterfaces = address.Assign (staDevices);
+
 
   UdpEchoServerHelper echoServer (9);
 
@@ -125,13 +132,13 @@ main (int argc, char *argv[])
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
 
-  UdpEchoClientHelper echoClient (staInterfaces.GetAddress (0), 9);
+  UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
 
   ApplicationContainer clientApps = 
-    echoClient.Install (wifiStaNodes.Get (nWifi - 1));
+  echoClient.Install (wifiStaNodes.Get (nWifi - 2));
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
 
@@ -142,7 +149,7 @@ main (int argc, char *argv[])
   if (tracing == true)
     {
 
-      phy.EnablePcap ("third", apDevices.Get (0));
+      phy.EnablePcap ("scena", apDevices.Get (0));
 
     }
   AnimationInterface anim ("animation.xml");
