@@ -107,8 +107,11 @@ main (int argc, char *argv[])
                                  "GridWidth", UintegerValue (4),
                                  "LayoutType", StringValue ("RowFirst"));
   mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                             "Bounds", RectangleValue (Rectangle (-5, 5, -5, 5)));
+                             "Bounds", RectangleValue (Rectangle (0.0, 5.0, -0.001, 5.0)));
   mobility.Install (wifiStaNodes);
+  Ptr<ListPositionAllocator> positionAlloc =CreateObject<ListPositionAllocator>();
+  positionAlloc->Add (Vector (2.5, 10, 0));
+  mobility.SetPositionAllocator (positionAlloc);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode);
 
