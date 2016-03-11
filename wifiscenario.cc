@@ -22,6 +22,7 @@
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/netanim-module.h"
+#include "ns3/flow-monitor-helper.h"
 //  Network Topology
 //   Wifi 10.1.4.0
 //                 AP
@@ -155,8 +156,12 @@ main (int argc, char *argv[])
       phy.EnablePcap ("scena", apDevices.Get (0));
 
     }
+  FlowMonitorHelper flowmonHelper;
+  flowmonHelper.InstallAll ();
+
   AnimationInterface anim ("animation.xml");
   Simulator::Run ();
+  flowmonHelper.SerializeToXmlFile ("wifiscen.flowmon", false, false);
   Simulator::Destroy ();
   return 0;
 
