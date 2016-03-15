@@ -42,7 +42,7 @@ main (int argc, char *argv[])
   bool verbose = true;
   uint32_t nWifi = 3;
   bool tracing = false;
-
+  
   CommandLine cmd;
   cmd.AddValue ("nWifi", "Number of wifi STA devices", nWifi);
   cmd.AddValue ("verbose", "Tell echo applications to log if true", verbose);
@@ -107,8 +107,9 @@ main (int argc, char *argv[])
                                  "DeltaY", DoubleValue (1.0),
                                  "GridWidth", UintegerValue (4),
                                  "LayoutType", StringValue ("RowFirst"));
-  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                             "Bounds", RectangleValue (Rectangle (0.0, 5.0, -0.001, 5.0)));
+  //mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+  //                           "Bounds", RectangleValue (Rectangle (0.0, 5.0, -0.001, 5.0)));
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiStaNodes);
   Ptr<ListPositionAllocator> positionAlloc =CreateObject<ListPositionAllocator>();
   positionAlloc->Add (Vector (2.5, 10, 0));
@@ -137,12 +138,12 @@ main (int argc, char *argv[])
   serverApps.Stop (Seconds (10.0));
 
   UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 9);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (100000));
+  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.001)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
 
   ApplicationContainer clientApps = 
-  echoClient.Install (wifiStaNodes.Get (nWifi - 2));
+  echoClient.Install (wifiStaNodes);
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
 
@@ -160,6 +161,7 @@ main (int argc, char *argv[])
   flowmonHelper.InstallAll ();
 
   AnimationInterface anim ("animation.xml");
+  anim.SetMaxPktsPerTraceFile(100000000);
   Simulator::Run ();
   flowmonHelper.SerializeToXmlFile ("wifiscen.flowmon", false, false);
   Simulator::Destroy ();
