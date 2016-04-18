@@ -13,7 +13,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/applications-module.h"
@@ -43,15 +46,22 @@ main (int argc, char *argv[])
 {
   bool verbose = true;
   uint32_t nWifi = 3;
+  float thrpt =0;
   bool tracing = false;
+  std::ofstream outputfile;
+  std::ostringstream s;
   
+ 
   CommandLine cmd;
   cmd.AddValue ("nWifi", "Number of wifi STA devices", nWifi);
   cmd.AddValue ("verbose", "Tell echo applications to log if true", verbose);
   cmd.AddValue ("tracing", "Enable pcap tracing", tracing);
 
   cmd.Parse (argc,argv);
-
+  s << "Result_users_" << nWifi<<".txt";
+  std::string query(s.str());
+  outputfile.open (query.c_str());
+  
   // Check for valid number of csma or wifi nodes
   // 250 should be enough, otherwise IP addresses 
   // soon become an issue
@@ -170,11 +180,15 @@ main (int argc, char *argv[])
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
           Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+
+          thrpt = i->second.rxBytes*8/((i->second.timeLastRxPacket.GetSeconds()-i->second.timeLastTxPacket.GetSeconds())*1024*1024);
           std::cout << "Flow " << i->first<< " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "Throughput: " << i->second.rxBytes*8/((i->second.timeLastRxPacket.GetSeconds()-i->second.timeLastTxPacket.GetSeconds())*1024*1024)  << "Mb/s"<<"\n";
+          std::cout << "Throughput: " <<  thrpt << "Mb/s"<<"\n";
+          outputfile << thrpt <<"\n";
+  
 
     }
-
+  outputfile.close();
   Simulator::Destroy ();
   return 0;
 
