@@ -106,9 +106,9 @@ main (int argc, char *argv[])
                                  "DeltaY", DoubleValue (1.0),
                                  "GridWidth", UintegerValue (4),
                                  "LayoutType", StringValue ("RowFirst"));
-  //mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-  //                           "Bounds", RectangleValue (Rectangle (0.0, 5.0, -0.001, 5.0)));
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                          "Bounds", RectangleValue (Rectangle (0.0, 5.0, -0.001, 5.0)));
+  //mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiStaNodes);
   Ptr<ListPositionAllocator> positionAlloc =CreateObject<ListPositionAllocator>();
   positionAlloc->Add (Vector (2.5, 10, 0));
@@ -142,7 +142,7 @@ main (int argc, char *argv[])
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
 
   ApplicationContainer clientApps = 
-  echoClient.Install (wifiStaNodes.Get (nWifi - 2));
+  echoClient.Install (wifiStaNodes);
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
 
@@ -170,13 +170,9 @@ main (int argc, char *argv[])
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
           Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-          std::cout << "Flow " << i->first - 2 << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "  Tx Packets: " << i->second.txPackets << "\n";
-          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";
-          std::cout << "  TxOffered:  " << i->second.txBytes * 8.0 / 9.0 / 1000 / 1000  << " Mbps\n";
-          std::cout << "  Rx Packets: " << i->second.rxPackets << "\n";
-          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
-          std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / 9.0 / 1000 / 1000  << " Mbps\n";
+          std::cout << "Flow " << i->first<< " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+          std::cout << "Throughput: " << i->second.rxBytes*8/((i->second.timeLastRxPacket.GetSeconds()-i->second.timeLastTxPacket.GetSeconds())*1024*1024)  << "Mb/s"<<"\n";
+
     }
 
   Simulator::Destroy ();
