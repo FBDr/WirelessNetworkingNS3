@@ -22,7 +22,9 @@
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/netanim-module.h"
+#include "ns3/flow-monitor-module.h"
 #include "ns3/flow-monitor-helper.h"
+
 //  Network Topology
 //   Wifi 10.1.4.0
 //                 AP
@@ -66,14 +68,11 @@ main (int argc, char *argv[])
     }
 
 
-
-
-
-
   NodeContainer wifiStaNodes;
   wifiStaNodes.Create (nWifi-1);
   NodeContainer wifiApNode;
   wifiApNode.Create (1);
+  std::cout << "AP Creation succesfull." << std::endl;
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
@@ -91,13 +90,13 @@ main (int argc, char *argv[])
 
   NetDeviceContainer staDevices;
   staDevices = wifi.Install (phy, mac, wifiStaNodes);
-
+  std::cout << "STA install succesfull." << std::endl;
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid));
 
   NetDeviceContainer apDevices;
   apDevices = wifi.Install (phy, mac, wifiApNode);
-
+  std::cout << "AP install succesfull." << std::endl;
   MobilityHelper mobility;
 
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
@@ -138,12 +137,12 @@ main (int argc, char *argv[])
   serverApps.Stop (Seconds (10.0));
 
   UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 9);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (100000));
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.001)));
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (2));
+  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.5)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
 
   ApplicationContainer clientApps = 
-  echoClient.Install (wifiStaNodes);
+  echoClient.Install (wifiStaNodes.Get (nWifi - 2));
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
 
@@ -157,13 +156,29 @@ main (int argc, char *argv[])
       phy.EnablePcap ("scena", apDevices.Get (0));
 
     }
-  FlowMonitorHelper flowmonHelper;
-  flowmonHelper.InstallAll ();
+  FlowMonitorHelper flowmon;
+  Ptr<FlowMonitor> monitor = flowmon.InstallAll ();
+
 
   AnimationInterface anim ("animation.xml");
   anim.SetMaxPktsPerTraceFile(100000000);
   Simulator::Run ();
-  flowmonHelper.SerializeToXmlFile ("wifiscen.flowmon", false, false);
+
+  monitor->CheckForLostPackets ();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  FlowMonitor::FlowStatsContainer stats = monitor->GetFlowStats ();
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
+    {
+          Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+          std::cout << "Flow " << i->first - 2 << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+          std::cout << "  Tx Packets: " << i->second.txPackets << "\n";
+          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";
+          std::cout << "  TxOffered:  " << i->second.txBytes * 8.0 / 9.0 / 1000 / 1000  << " Mbps\n";
+          std::cout << "  Rx Packets: " << i->second.rxPackets << "\n";
+          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
+          std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / 9.0 / 1000 / 1000  << " Mbps\n";
+    }
+
   Simulator::Destroy ();
   return 0;
 
