@@ -89,9 +89,14 @@ main (int argc, char *argv[])
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi = WifiHelper::Default ();
-  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
+  wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
+  //wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
+  wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+                                "DataMode", StringValue("DsssRate11Mbps"),
+                                "ControlMode", StringValue("DsssRate11Mbps"));
 
   NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
+  //HtWifiMacHelper mac = HtWifiMacHelper::Default ();
 
   Ssid ssid = Ssid ("ns-3-ssid");
   mac.SetType ("ns3::StaWifiMac",
@@ -116,12 +121,12 @@ main (int argc, char *argv[])
                                  "DeltaY", DoubleValue (1.0),
                                  "GridWidth", UintegerValue (4),
                                  "LayoutType", StringValue ("RowFirst"));
-  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                          "Bounds", RectangleValue (Rectangle (0.0, 5.0, -0.001, 5.0)));
-  //mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  //mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+  //                        "Bounds", RectangleValue (Rectangle (0.0, 5.0, -0.001, 5.0)));
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiStaNodes);
   Ptr<ListPositionAllocator> positionAlloc =CreateObject<ListPositionAllocator>();
-  positionAlloc->Add (Vector (2.5, 10, 0));
+  positionAlloc->Add (Vector (2.5, 0, 0));
   mobility.SetPositionAllocator (positionAlloc);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode);
@@ -147,9 +152,9 @@ main (int argc, char *argv[])
   serverApps.Stop (Seconds (10.0));
 
   UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 9);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (2));
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.5)));
-  echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (10000));
+  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.00001)));
+  echoClient.SetAttribute ("PacketSize", UintegerValue (1472));
 
   ApplicationContainer clientApps = 
   echoClient.Install (wifiStaNodes);
@@ -181,9 +186,9 @@ main (int argc, char *argv[])
     {
           Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
 
-          thrpt = i->second.rxBytes*8/((i->second.timeLastRxPacket.GetSeconds()-i->second.timeLastTxPacket.GetSeconds())*1024*1024);
+          thrpt = i->second.rxBytes*8/((i->second.timeLastRxPacket.GetSeconds()-i->second.timeFirstTxPacket.GetSeconds())*1024);
           std::cout << "Flow " << i->first<< " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "Throughput: " <<  thrpt << "Mb/s"<<"\n";
+          std::cout << "Throughput: " <<  thrpt << " Kb/s"<<"\n";
           outputfile << thrpt <<"\n";
   
 
