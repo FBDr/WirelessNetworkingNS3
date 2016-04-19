@@ -50,7 +50,11 @@ main (int argc, char *argv[])
   bool tracing = false;
   std::ofstream outputfile;
   std::ostringstream s;
-  
+  time_t timex;
+  time(&timex);
+  RngSeedManager::SetSeed(timex);
+  RngSeedManager::SetRun(1);
+
  
   CommandLine cmd;
   cmd.AddValue ("nWifi", "Number of wifi STA devices", nWifi);
@@ -89,14 +93,14 @@ main (int argc, char *argv[])
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi = WifiHelper::Default ();
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
-  //wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-  wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-                                "DataMode", StringValue("DsssRate11Mbps"),
-                                "ControlMode", StringValue("DsssRate11Mbps"));
+  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
+  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
+  //wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+  //                              "DataMode", StringValue("DsssRate11Mbps"),
+  //                              "ControlMode", StringValue("DsssRate11Mbps"));
 
-  NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
-  //HtWifiMacHelper mac = HtWifiMacHelper::Default ();
+  //NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
+  HtWifiMacHelper mac = HtWifiMacHelper::Default ();
 
   Ssid ssid = Ssid ("ns-3-ssid");
   mac.SetType ("ns3::StaWifiMac",
@@ -126,7 +130,7 @@ main (int argc, char *argv[])
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiStaNodes);
   Ptr<ListPositionAllocator> positionAlloc =CreateObject<ListPositionAllocator>();
-  positionAlloc->Add (Vector (2.5, 0, 0));
+  positionAlloc->Add (Vector (2.5, 5, 0));
   mobility.SetPositionAllocator (positionAlloc);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode);
@@ -153,7 +157,7 @@ main (int argc, char *argv[])
 
   UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (10000));
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.00001)));
+  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.001)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1472));
 
   ApplicationContainer clientApps = 
@@ -190,10 +194,16 @@ main (int argc, char *argv[])
           std::cout << "Flow " << i->first<< " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           std::cout << "Throughput: " <<  thrpt << " Kb/s"<<"\n";
           outputfile << thrpt <<"\n";
+          std::cout << "  Tx Packets: " << i->second.txPackets << "\n";
+          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";
+
+          std::cout << "  Rx Packets: " << i->second.rxPackets << "\n";
+          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
   
 
     }
   outputfile.close();
+  flowmon.SerializeToXmlFile ("wifiscenout.xml", false, false);
   Simulator::Destroy ();
   return 0;
 
