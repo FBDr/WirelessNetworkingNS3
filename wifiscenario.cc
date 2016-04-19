@@ -46,7 +46,10 @@ main (int argc, char *argv[])
 {
   bool verbose = true;
   uint32_t nWifi = 3;
+  uint32_t flownum = 0;
   float thrpt =0;
+  float av_thrpt =0;
+  float summed_thrpt =0;
   bool tracing = false;
   std::ofstream outputfile;
   std::ostringstream s;
@@ -54,7 +57,7 @@ main (int argc, char *argv[])
   time(&timex);
   RngSeedManager::SetSeed(timex);
   RngSeedManager::SetRun(1);
-
+  std::ofstream log("log_result_file.txt", std::ios_base::app | std::ios_base::out);
  
   CommandLine cmd;
   cmd.AddValue ("nWifi", "Number of wifi STA devices", nWifi);
@@ -156,7 +159,7 @@ main (int argc, char *argv[])
   serverApps.Stop (Seconds (10.0));
 
   UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 99);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (100));
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (1000));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.001)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1472));
 
@@ -188,22 +191,25 @@ main (int argc, char *argv[])
   FlowMonitor::FlowStatsContainer stats = monitor->GetFlowStats ();
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
+          flownum++;
           Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
 
           thrpt = i->second.rxBytes*8/((i->second.timeLastRxPacket.GetSeconds()-i->second.timeFirstTxPacket.GetSeconds())*1024);
           std::cout << "Flow " << i->first<< " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           std::cout << "Throughput: " <<  thrpt << " Kb/s"<<"\n";
-          outputfile << thrpt <<"\n";
+          
           std::cout << "  Tx Packets: " << i->second.txPackets << "\n";
           std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";
 
           std::cout << "  Rx Packets: " << i->second.rxPackets << "\n";
           std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
-  
-
+          summed_thrpt +=thrpt;
     }
+  av_thrpt =  summed_thrpt /flownum;
+  outputfile << av_thrpt <<"\n";
+  log << nWifi <<","<<av_thrpt<<"\n";
   outputfile.close();
-  flowmon.SerializeToXmlFile ("wifiscenout.xml", false, false);
+  //flowmon.SerializeToXmlFile ("wifiscenout.xml", false, false);
   Simulator::Destroy ();
   return 0;
 
