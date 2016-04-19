@@ -122,7 +122,7 @@ main (int argc, char *argv[])
                                  "MinX", DoubleValue (0.0),
                                  "MinY", DoubleValue (0.0),
                                  "DeltaX", DoubleValue (1.5),
-                                 "DeltaY", DoubleValue (1.0),
+                                 "DeltaY", DoubleValue (1.5),
                                  "GridWidth", UintegerValue (4),
                                  "LayoutType", StringValue ("RowFirst"));
   //mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
@@ -130,7 +130,7 @@ main (int argc, char *argv[])
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiStaNodes);
   Ptr<ListPositionAllocator> positionAlloc =CreateObject<ListPositionAllocator>();
-  positionAlloc->Add (Vector (2.5, 5, 0));
+  positionAlloc->Add (Vector (2.5, -2.5, 0));
   mobility.SetPositionAllocator (positionAlloc);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode);
@@ -149,14 +149,14 @@ main (int argc, char *argv[])
   staInterfaces = address.Assign (staDevices);
 
 
-  UdpEchoServerHelper echoServer (9);
+  UdpEchoServerHelper echoServer (99);
 
   ApplicationContainer serverApps = echoServer.Install (wifiApNode.Get(0));
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
 
-  UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 9);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (10000));
+  UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 99);
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (100));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.001)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1472));
 
