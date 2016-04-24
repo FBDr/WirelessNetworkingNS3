@@ -45,6 +45,7 @@ int
 main (int argc, char *argv[])
 {
   bool verbose = true;
+  bool info=true;
   uint32_t nWifi = 3;
   float APposx =2.25;
   float APposy =-2;
@@ -67,6 +68,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("APposy", "Y-position of AP.", APposy);
   cmd.AddValue ("verbose", "Tell echo applications to log if true", verbose);
   cmd.AddValue ("tracing", "Enable pcap tracing", tracing);
+  cmd.AddValue ("info", "Output measurement results", info);
 
   cmd.Parse (argc,argv);
   s << "Result_users_" << nWifi<<".txt";
@@ -199,14 +201,17 @@ main (int argc, char *argv[])
           Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
 
           thrpt = i->second.rxBytes*8/((i->second.timeLastRxPacket.GetSeconds()-i->second.timeFirstTxPacket.GetSeconds())*1024);
-          std::cout << "Flow " << i->first<< " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "Throughput: " <<  thrpt << " Kb/s"<<"\n";
-          
-          std::cout << "  Tx Packets: " << i->second.txPackets << "\n";
-          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";
+          if(info){
 
-          std::cout << "  Rx Packets: " << i->second.rxPackets << "\n";
-          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
+                std::cout << "Flow " << i->first<< " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+                std::cout << "Throughput: " <<  thrpt << " Kb/s"<<"\n";
+          
+                std::cout << "  Tx Packets: " << i->second.txPackets << "\n";
+                std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";
+
+                std::cout << "  Rx Packets: " << i->second.rxPackets << "\n";
+                std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
+          };
           summed_thrpt +=thrpt;
     }
   av_thrpt =  summed_thrpt /flownum;
