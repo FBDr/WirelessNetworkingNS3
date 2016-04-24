@@ -44,6 +44,7 @@ NS_LOG_COMPONENT_DEFINE ("ThirdScriptExample");
 int 
 main (int argc, char *argv[])
 {
+  std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i;
   bool verbose = true;
   bool info=true;
   uint32_t nWifi = 3;
@@ -51,10 +52,10 @@ main (int argc, char *argv[])
   float APposy =-2;
   uint32_t flownum = 0;
   float thrpt =0;
-  float av_thrpt =0;
+  //float av_thrpt =0;
   float summed_thrpt =0;
   bool tracing = false;
-  std::ofstream outputfile;
+  //std::ofstream outputfile;
   std::ostringstream s;
   time_t timex;
   time(&timex);
@@ -73,7 +74,7 @@ main (int argc, char *argv[])
   cmd.Parse (argc,argv);
   s << "Result_users_" << nWifi<<".txt";
   std::string query(s.str());
-  outputfile.open (query.c_str());
+  //outputfile.open (query.c_str());
   
   // Check for valid number of csma or wifi nodes
   // 250 should be enough, otherwise IP addresses 
@@ -195,7 +196,7 @@ main (int argc, char *argv[])
   monitor->CheckForLostPackets ();
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
   FlowMonitor::FlowStatsContainer stats = monitor->GetFlowStats ();
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
+  for (i = stats.begin (); i != stats.end (); ++i)
     {
           flownum++;
           Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
@@ -213,12 +214,20 @@ main (int argc, char *argv[])
                 std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
           };
           summed_thrpt +=thrpt;
+          log << thrpt<<"\n";
     }
-  av_thrpt =  summed_thrpt /flownum;
-  outputfile << av_thrpt <<"\n";
-  log << nWifi <<","<<av_thrpt<<"\n";
-  outputfile.close();
+  if ((i->first) != 40){
+        std::cout << "!!! Number of flows<40 !!!" << "\n";
+        for(uint32_t idxx = 0; idxx<(40-(i->first)); idxx++){
+             log <<0<<"\n";
+        };   
+  };
+  //av_thrpt =  summed_thrpt /flownum;
+  //outputfile << av_thrpt <<"\n";
+  //log << nWifi <<","<<av_thrpt<<"\n";
+  //outputfile.close();
   //flowmon.SerializeToXmlFile ("wifiscenout.xml", false, false);
+
   Simulator::Destroy ();
   return 0;
 
