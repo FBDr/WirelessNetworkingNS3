@@ -46,6 +46,8 @@ main (int argc, char *argv[])
 {
   bool verbose = true;
   uint32_t nWifi = 3;
+  float APposx =2.25;
+  float APposy =-2;
   uint32_t flownum = 0;
   float thrpt =0;
   float av_thrpt =0;
@@ -61,6 +63,8 @@ main (int argc, char *argv[])
  
   CommandLine cmd;
   cmd.AddValue ("nWifi", "Number of wifi STA devices", nWifi);
+  cmd.AddValue ("APposx", "X-position of AP.", APposx);
+  cmd.AddValue ("APposy", "Y-position of AP.", APposy);
   cmd.AddValue ("verbose", "Tell echo applications to log if true", verbose);
   cmd.AddValue ("tracing", "Enable pcap tracing", tracing);
 
@@ -133,7 +137,7 @@ main (int argc, char *argv[])
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiStaNodes);
   Ptr<ListPositionAllocator> positionAlloc =CreateObject<ListPositionAllocator>();
-  positionAlloc->Add (Vector (2.5, -2.5, 0));
+  positionAlloc->Add (Vector (APposx, APposy, 0));
   mobility.SetPositionAllocator (positionAlloc);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode);
