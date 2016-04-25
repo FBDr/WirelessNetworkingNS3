@@ -28,6 +28,7 @@
 #include "ns3/flow-monitor-module.h"
 #include "ns3/flow-monitor-helper.h"
 
+
 //  Network Topology
 //   Wifi 10.1.4.0
 //                 AP
@@ -52,8 +53,9 @@ main (int argc, char *argv[])
   float APposy =-2;
   uint32_t flownum = 0;
   float thrpt =0;
+  int64_t Delay = 0;
   //float av_thrpt =0;
-  float summed_thrpt =0;
+  //float summed_thrpt =0;
   bool tracing = false;
   //std::ofstream outputfile;
   std::ostringstream s;
@@ -101,16 +103,14 @@ main (int argc, char *argv[])
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
   phy.SetChannel (channel.Create ());
+  phy.Set ("ShortGuardEnabled", BooleanValue (1));
 
   WifiHelper wifi = WifiHelper::Default ();
   wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
-  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-  //wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-  //                              "DataMode", StringValue("DsssRate11Mbps"),
-  //                              "ControlMode", StringValue("DsssRate11Mbps"));
-
-  //NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
+  Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40.046));
   HtWifiMacHelper mac = HtWifiMacHelper::Default ();
+  StringValue DataRate = HtWifiMacHelper::DataRateForMcs (7);
+  wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", DataRate,"ControlMode", DataRate);
 
   Ssid ssid = Ssid ("ns-3-ssid");
   mac.SetType ("ns3::StaWifiMac",
@@ -126,13 +126,14 @@ main (int argc, char *argv[])
   NetDeviceContainer apDevices;
   apDevices = wifi.Install (phy, mac, wifiApNode);
   std::cout << "AP install succesfull." << std::endl;
+  Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (40));
   MobilityHelper mobility;
 
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
                                  "MinX", DoubleValue (0.0),
                                  "MinY", DoubleValue (0.0),
-                                 "DeltaX", DoubleValue (1.5),
-                                 "DeltaY", DoubleValue (1.5),
+                                 "DeltaX", DoubleValue (2),
+                                 "DeltaY", DoubleValue (2),
                                  "GridWidth", UintegerValue (4),
                                  "LayoutType", StringValue ("RowFirst"));
   //mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
@@ -163,21 +164,21 @@ main (int argc, char *argv[])
 
   ApplicationContainer serverApps = echoServer.Install (wifiApNode.Get(0));
   serverApps.Start (Seconds (1.0));
-  serverApps.Stop (Seconds (10.0));
+  serverApps.Stop (Seconds (11.0));
 
   UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 99);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1000));
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.001)));
+  echoClient.SetAttribute ("Interval", TimeValue (Seconds(0.00001)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1472));
 
   ApplicationContainer clientApps = 
   echoClient.Install (wifiStaNodes);
   clientApps.Start (Seconds (2.0));
-  clientApps.Stop (Seconds (10.0));
+  clientApps.Stop (Seconds (5.0));
 
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
-  Simulator::Stop (Seconds (10.0));
+  Simulator::Stop (Seconds (10));
 
   if (tracing == true)
     {
@@ -202,6 +203,14 @@ main (int argc, char *argv[])
           Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
 
           thrpt = i->second.rxBytes*8/((i->second.timeLastRxPacket.GetSeconds()-i->second.timeFirstTxPacket.GetSeconds())*1024);
+          if((i->second.rxPackets !=0)){
+                Delay = (i->second.delaySum.GetMilliSeconds() / i->second.rxPackets);
+          }
+          else{
+                Delay = 99999;
+                std::cout<< "Delay Error"<<"\n";
+          };
+
           if(info){
 
                 std::cout << "Flow " << i->first<< " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
@@ -212,9 +221,9 @@ main (int argc, char *argv[])
 
                 std::cout << "  Rx Packets: " << i->second.rxPackets << "\n";
                 std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
+                std::cout << "  Delay:      " << Delay << "\n";                                 
           };
-          summed_thrpt +=thrpt;
-          log << thrpt<<"\n";
+          log << Delay<<"\n";
     }
   if ((i->first) != 40){
         std::cout << "!!! Number of flows<40 !!!" << "\n";
