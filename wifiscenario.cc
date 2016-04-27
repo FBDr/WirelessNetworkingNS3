@@ -24,7 +24,7 @@
 #include "ns3/mobility-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
-#include "ns3/netanim-module.h"
+//#include "ns3/netanim-module.h"
 #include "ns3/flow-monitor-module.h"
 #include "ns3/flow-monitor-helper.h"
 
@@ -190,8 +190,8 @@ main (int argc, char *argv[])
   Ptr<FlowMonitor> monitor = flowmon.InstallAll ();
 
 
-  AnimationInterface anim ("animation.xml");
-  anim.SetMaxPktsPerTraceFile(100000000);
+  //AnimationInterface anim ("animation.xml");
+  //anim.SetMaxPktsPerTraceFile(100000000);
   Simulator::Run ();
 
   monitor->CheckForLostPackets ();
@@ -223,7 +223,7 @@ main (int argc, char *argv[])
                 std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
                 std::cout << "  Delay:      " << Delay << "\n";                                 
           };
-          log << Delay<<"\n";
+          log << thrpt<<"\n";
     }
   if ((i->first) != 40){
         std::cout << "!!! Number of flows<40 !!!" << "\n";
