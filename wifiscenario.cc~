@@ -101,6 +101,7 @@ main (int argc, char *argv[])
 
   //Mobility setting
   MobilityHelper mobility;
+
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
                                  "MinX", DoubleValue (0.0),
                                  "MinY", DoubleValue (0.0),
@@ -121,35 +122,48 @@ main (int argc, char *argv[])
   stack.Install (wifiStaNodes);
   stack.Install (wifiApNode);
   Ipv4AddressHelper address;
+
+ 
   Ipv4InterfaceContainer staInterfaces;
+ 
   Ipv4InterfaceContainer apInterfaces;
   address.SetBase ("10.1.4.0", "255.255.255.0");
   apInterfaces = address.Assign (apDevices);
   staInterfaces = address.Assign (staDevices);
 
+
   UdpEchoServerHelper echoServer (99);
+
   ApplicationContainer serverApps = echoServer.Install (wifiApNode.Get(0));
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (11.0));
+
   UdpEchoClientHelper echoClient (apInterfaces.GetAddress (0), 99);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1000));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds(0.00001)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1472));
+
   ApplicationContainer clientApps = 
   echoClient.Install (wifiStaNodes);
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (5.0));
+
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
   Simulator::Stop (Seconds (10));
 
   if (tracing == true)
     {
+
       phy.EnablePcap ("scena", apDevices.Get (0));
+
     }
 
   //Data extraction
   FlowMonitorHelper flowmon;
   Ptr<FlowMonitor> monitor = flowmon.InstallAll ();
+  //AnimationInterface anim ("animation.xml");
+  //anim.SetMaxPktsPerTraceFile(100000000);
   Simulator::Run ();
   monitor->CheckForLostPackets ();
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
